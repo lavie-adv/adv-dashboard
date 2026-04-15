@@ -1,54 +1,1150 @@
-ADV
-ANALYTICS
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ADV Analytics</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --surface2: #1a1a1a;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #f0f0f0;
+  --muted: #666;
+  --accent: #c8f135;
+  --accent2: #7dd3fc;
+  --accent3: #fb923c;
+  --accent4: #a78bfa;
+  --red: #f87171;
+  --green: #4ade80;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; min-height: 100vh; }
 
-Overview
+.app { display: grid; grid-template-columns: 200px 1fr; min-height: 100vh; }
+.sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 24px 0; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; }
+.logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.logo-mark { font-family: var(--mono); font-size: 18px; font-weight: 500; color: var(--accent); letter-spacing: 0.12em; }
+.logo-sub { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 20px; font-size: 13px; color: var(--muted); cursor: pointer; border-left: 2px solid transparent; transition: all 0.15s; }
+.nav-item:hover { color: var(--text); background: var(--surface2); }
+.nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(200,241,53,0.05); }
+.nav-icon { width: 16px; height: 16px; opacity: 0.7; }
+.sidebar-bottom { margin-top: auto; padding: 16px 20px; border-top: 1px solid var(--border); }
+.sync-status { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; flex-shrink: 0; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
-Marketing
+.main { padding: 28px 32px; overflow-x: hidden; }
+.page { display: none; }
+.page.active { display: block; }
 
-Orders
+.topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+.page-title { font-size: 20px; font-weight: 400; letter-spacing: -0.01em; }
+.page-title span { color: var(--accent); }
+.controls { display: flex; gap: 8px; align-items: center; }
+.range-btn { font-family: var(--mono); font-size: 11px; padding: 6px 12px; border: 1px solid var(--border2); border-radius: 4px; background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; letter-spacing: 0.05em; }
+.range-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.25); }
+.range-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(200,241,53,0.08); }
+.export-btn { font-family: var(--mono); font-size: 11px; padding: 6px 14px; border: 1px solid var(--border2); border-radius: 4px; background: transparent; color: var(--muted); cursor: pointer; letter-spacing: 0.05em; transition: all 0.15s; }
+.export-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.25); }
 
-Amazon
+/* kpi grid */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; position: relative; overflow: hidden; }
+.kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--kpi-color, var(--border2)); }
+.kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+.kpi-value { font-family: var(--mono); font-size: 24px; font-weight: 500; color: var(--text); line-height: 1; }
+.kpi-delta { font-size: 11px; margin-top: 6px; display: flex; align-items: center; gap: 4px; font-family: var(--mono); }
+.kpi-delta.up { color: var(--green); }
+.kpi-delta.down { color: var(--red); }
+.kpi-delta.neutral { color: var(--muted); }
 
-Connected to Supabase
-Performance Overview
-7D
-30D
-90D
-↓ Export
+/* charts */
+.chart-row { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px; }
+.chart-row.even { grid-template-columns: 1fr 1fr; }
+.chart-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+.chart-card.full { grid-column: 1 / -1; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.card-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; }
+.leg { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.leg-sq { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
 
-Loading...
-REVENUE — SHOPIFY
+/* channel table */
+.ch-table { width: 100%; border-collapse: collapse; }
+.ch-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 0 0 10px; text-align: left; border-bottom: 1px solid var(--border); }
+.ch-table td { padding: 10px 0; border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: 12px; }
+.ch-table tr:last-child td { border-bottom: none; }
+.ch-name { font-family: var(--font); font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.ch-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-family: var(--mono); }
+.pill-g { background: rgba(74,222,128,0.12); color: var(--green); }
+.pill-y { background: rgba(251,146,60,0.12); color: var(--accent3); }
+.pill-r { background: rgba(248,113,113,0.12); color: var(--red); }
+.pill-b { background: rgba(125,211,252,0.12); color: var(--accent2); }
 
-Revenue
+/* upload section */
+.upload-section { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 12px; }
+.upload-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 14px; }
+.source-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.source-info { font-size: 12px; flex: 1; min-width: 0; }
+.source-name { color: var(--text); font-weight: 500; margin-bottom: 3px; }
+.source-meta { color: var(--muted); font-size: 11px; font-family: var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upload-btn-sm { font-size: 10px; font-family: var(--mono); padding: 4px 10px; border: 1px solid var(--border2); border-radius: 4px; background: transparent; color: var(--muted); cursor: pointer; white-space: nowrap; transition: all 0.15s; flex-shrink: 0; }
+.upload-btn-sm:hover { color: var(--accent); border-color: var(--accent); }
+.hidden-input { display: none; }
 
-Refunds
-Loading...
-AD SPEND MIX
-Loading...
-MER & BLENDED ROAS
+/* amazon connect card */
+.connect-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 40px; text-align: center; }
+.connect-card h3 { font-size: 15px; font-weight: 500; margin-bottom: 8px; color: var(--text); }
+.connect-card p { font-size: 13px; color: var(--muted); line-height: 1.6; max-width: 400px; margin: 0 auto 20px; }
+.connect-steps { text-align: left; max-width: 420px; margin: 0 auto; }
+.connect-step { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--muted); }
+.connect-step:last-child { border-bottom: none; }
+.step-num { font-family: var(--mono); font-size: 11px; color: var(--accent); background: rgba(200,241,53,0.1); border-radius: 4px; padding: 2px 7px; flex-shrink: 0; margin-top: 1px; }
 
-MER
+/* loading */
+.loading { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 40px; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+.spinner { width: 14px; height: 14px; border: 1px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-ROAS
-Loading...
-CHANNEL BREAKDOWN
-CHANNEL
-SPEND
-ROAS
+/* toast */
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 6px; padding: 12px 16px; font-size: 12px; font-family: var(--mono); color: var(--text); opacity: 0; transform: translateY(8px); transition: all 0.2s; z-index: 999; max-width: 280px; }
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.success { border-color: var(--green); color: var(--green); }
+.toast.error { border-color: var(--red); color: var(--red); }
 
+/* stat row for marketing page */
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: 10px; margin-bottom: 20px; }
+.stat-mini { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; }
+.stat-mini-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px; }
+.stat-mini-value { font-family: var(--mono); font-size: 18px; font-weight: 500; }
 
-DATA SOURCES
-Checking...
-Shopify
-Connecting...
+@media (max-width: 768px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .main { padding: 16px; }
+  .chart-row { grid-template-columns: 1fr; }
+  .chart-row.triple { grid-template-columns: 1fr; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
 
-Meta Ads
-CSV upload
-Upload CSV
-Google Ads
-CSV upload
-Upload CSV
-Bing Ads
-CSV upload
-Upload CSV
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">ADV</div>
+      <div class="logo-sub">Analytics</div>
+    </div>
+    <nav>
+      <div class="nav-item active" id="nav-overview" onclick="showPage('overview',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+        Overview
+      </div>
+      <div class="nav-item" id="nav-marketing" onclick="showPage('marketing',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12 L5 8 L8 10 L11 5 L14 7"/></svg>
+        Marketing
+      </div>
+      <div class="nav-item" id="nav-orders" onclick="showPage('orders',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+        Orders
+      </div>
+      <div class="nav-item" id="nav-amazon" onclick="showPage('amazon',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14 L2 6 L6 6 L6 14 M7 14 L7 2 L11 2 L11 14 M12 14 L12 9 L16 9 L16 14"/></svg>
+        Amazon
+      </div>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sync-status"><div class="dot" id="main-dot"></div> <span id="sync-label">Connecting...</span></div>
+    </div>
+  </aside>
 
+  <main class="main">
+
+    <!-- ── OVERVIEW PAGE ── -->
+    <div class="page active" id="page-overview">
+      <div class="topbar">
+        <div class="page-title">Performance <span>Overview</span></div>
+        <div class="controls">
+          <button class="range-btn" onclick="setRange(7,this)">7D</button>
+          <button class="range-btn active" onclick="setRange(30,this)">30D</button>
+          <button class="range-btn" onclick="setRange(90,this)">90D</button>
+          <button class="export-btn" onclick="exportData()">↓ Export</button>
+        </div>
+      </div>
+
+      <div id="kpi-revenue" class="kpi-grid">
+        <div class="loading"><div class="spinner"></div> Loading...</div>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-card">
+          <div class="card-header">
+            <div class="card-title">Revenue — Shopify</div>
+            <div class="legend">
+              <div class="leg"><div class="leg-sq" style="background:#c8f135"></div>Revenue</div>
+              <div class="leg"><div class="leg-sq" style="background:#f87171"></div>Refunds</div>
+            </div>
+          </div>
+          <div style="position:relative;height:200px">
+            <canvas id="revenueChart" role="img" aria-label="Daily Shopify revenue and refunds"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="card-header">
+            <div class="card-title">Ad spend mix</div>
+          </div>
+          <div style="position:relative;height:160px">
+            <canvas id="spendChart" role="img" aria-label="Ad spend by channel"></canvas>
+          </div>
+          <div id="spend-legend" class="legend" style="margin-top:12px;justify-content:center"></div>
+        </div>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-card">
+          <div class="card-header">
+            <div class="card-title">MER & Blended ROAS</div>
+            <div class="legend">
+              <div class="leg"><div class="leg-sq" style="background:#7dd3fc"></div>MER</div>
+              <div class="leg"><div class="leg-sq" style="background:#a78bfa"></div>ROAS</div>
+            </div>
+          </div>
+          <div style="position:relative;height:180px">
+            <canvas id="merChart" role="img" aria-label="MER and blended ROAS trend"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="card-header"><div class="card-title">Channel breakdown</div></div>
+          <table class="ch-table">
+            <thead><tr><th>Channel</th><th>Spend</th><th>ROAS</th><th>Clicks</th><th>Source</th></tr></thead>
+            <tbody id="channel-tbody"><tr><td colspan="5"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="upload-section">
+        <div class="card-header" style="margin-bottom:0">
+          <div class="card-title">Data sources</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono)" id="last-sync">Checking...</div>
+        </div>
+        <div class="upload-grid">
+          <div class="source-card">
+            <div class="source-info">
+              <div class="source-name">Shopify</div>
+              <div class="source-meta" id="shopify-status">Connecting...</div>
+            </div>
+            <div class="dot" id="shopify-dot" style="background:var(--muted)"></div>
+          </div>
+          <div class="source-card">
+            <div class="source-info">
+              <div class="source-name">Meta Ads</div>
+              <div class="source-meta" id="meta-status">Checking...</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+              <div class="dot" id="meta-dot" style="background:var(--muted)"></div>
+              <button class="upload-btn-sm" onclick="triggerUpload('meta')">CSV</button>
+            </div>
+            <input class="hidden-input" id="meta-file" type="file" accept=".csv" onchange="handleCSV('meta',this)"/>
+          </div>
+          <div class="source-card">
+            <div class="source-info">
+              <div class="source-name">Google Ads</div>
+              <div class="source-meta" id="google-status">Checking...</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+              <div class="dot" id="google-dot" style="background:var(--muted)"></div>
+              <button class="upload-btn-sm" onclick="triggerUpload('google')">CSV</button>
+            </div>
+            <input class="hidden-input" id="google-file" type="file" accept=".csv" onchange="handleCSV('google',this)"/>
+          </div>
+          <div class="source-card">
+            <div class="source-info">
+              <div class="source-name">Bing Ads</div>
+              <div class="source-meta" id="bing-status">Checking...</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+              <div class="dot" id="bing-dot" style="background:var(--muted)"></div>
+              <button class="upload-btn-sm" onclick="triggerUpload('bing')">CSV</button>
+            </div>
+            <input class="hidden-input" id="bing-file" type="file" accept=".csv" onchange="handleCSV('bing',this)"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MARKETING PAGE ── -->
+    <div class="page" id="page-marketing">
+      <div class="topbar">
+        <div class="page-title">Marketing <span>Performance</span></div>
+        <div class="controls">
+          <button class="range-btn" onclick="setRange(7,this)">7D</button>
+          <button class="range-btn active" onclick="setRange(30,this)">30D</button>
+          <button class="range-btn" onclick="setRange(90,this)">90D</button>
+        </div>
+      </div>
+
+      <div id="mkt-kpis" class="kpi-grid">
+        <div class="loading"><div class="spinner"></div> Loading...</div>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-card">
+          <div class="card-header">
+            <div class="card-title">Daily Ad Spend by Channel</div>
+            <div class="legend">
+              <div class="leg"><div class="leg-sq" style="background:#fb923c"></div>Meta</div>
+              <div class="leg"><div class="leg-sq" style="background:#7dd3fc"></div>Google</div>
+              <div class="leg"><div class="leg-sq" style="background:#a78bfa"></div>Bing</div>
+            </div>
+          </div>
+          <div style="position:relative;height:200px">
+            <canvas id="mktSpendChart" role="img" aria-label="Daily ad spend by channel"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="card-header"><div class="card-title">ROAS by Channel</div></div>
+          <div style="position:relative;height:200px">
+            <canvas id="mktRoasChart" role="img" aria-label="ROAS by channel over time"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-row even">
+        <div class="chart-card">
+          <div class="card-header">
+            <div class="card-title">CPC Trend</div>
+            <div class="legend">
+              <div class="leg"><div class="leg-sq" style="background:#fb923c"></div>Meta</div>
+              <div class="leg"><div class="leg-sq" style="background:#7dd3fc"></div>Google</div>
+              <div class="leg"><div class="leg-sq" style="background:#a78bfa"></div>Bing</div>
+            </div>
+          </div>
+          <div style="position:relative;height:180px">
+            <canvas id="mktCpcChart" role="img" aria-label="CPC trend by channel"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="card-header"><div class="card-title">Clicks & Impressions</div>
+            <div class="legend">
+              <div class="leg"><div class="leg-sq" style="background:#c8f135"></div>Clicks</div>
+              <div class="leg"><div class="leg-sq" style="background:rgba(200,241,53,0.2)"></div>Impr ÷ 100</div>
+            </div>
+          </div>
+          <div style="position:relative;height:180px">
+            <canvas id="mktClicksChart" role="img" aria-label="Clicks and impressions over time"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card full" style="margin-top:12px">
+        <div class="card-header"><div class="card-title">Channel detail table</div></div>
+        <table class="ch-table">
+          <thead>
+            <tr>
+              <th>Channel</th><th>Spend</th><th>Clicks</th><th>Impressions</th>
+              <th>CPC</th><th>CPM</th><th>ROAS</th><th>Conv.</th><th>Conv. Value</th>
+            </tr>
+          </thead>
+          <tbody id="mkt-detail-tbody">
+            <tr><td colspan="9"><div class="loading"><div class="spinner"></div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── ORDERS PAGE ── -->
+    <div class="page" id="page-orders">
+      <div class="topbar">
+        <div class="page-title">Orders <span>& Revenue</span></div>
+        <div class="controls">
+          <button class="range-btn" onclick="setRange(7,this)">7D</button>
+          <button class="range-btn active" onclick="setRange(30,this)">30D</button>
+          <button class="range-btn" onclick="setRange(90,this)">90D</button>
+        </div>
+      </div>
+
+      <div id="ord-kpis" class="kpi-grid">
+        <div class="loading"><div class="spinner"></div> Loading...</div>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-card">
+          <div class="card-header">
+            <div class="card-title">Daily Orders</div>
+          </div>
+          <div style="position:relative;height:200px">
+            <canvas id="ordOrdersChart" role="img" aria-label="Daily order volume"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="card-header"><div class="card-title">AOV Trend</div></div>
+          <div style="position:relative;height:200px">
+            <canvas id="ordAovChart" role="img" aria-label="Average order value trend"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-row even">
+        <div class="chart-card">
+          <div class="card-header">
+            <div class="card-title">Revenue vs Refunds</div>
+            <div class="legend">
+              <div class="leg"><div class="leg-sq" style="background:#c8f135"></div>Revenue</div>
+              <div class="leg"><div class="leg-sq" style="background:#f87171"></div>Refunds</div>
+            </div>
+          </div>
+          <div style="position:relative;height:180px">
+            <canvas id="ordRevChart" role="img" aria-label="Revenue vs refunds"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="card-header"><div class="card-title">Refund Rate Trend</div></div>
+          <div style="position:relative;height:180px">
+            <canvas id="ordRefundRateChart" role="img" aria-label="Refund rate trend"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── AMAZON PAGE ── -->
+    <div class="page" id="page-amazon">
+      <div class="topbar">
+        <div class="page-title">Amazon <span>Performance</span></div>
+      </div>
+
+      <div class="connect-card">
+        <h3>Connect Amazon Seller Central</h3>
+        <p>Pull BSR rank, ad spend, ACOS, and sales data directly into this dashboard via Make.</p>
+        <div class="connect-steps">
+          <div class="connect-step">
+            <span class="step-num">01</span>
+            <span>Go to Amazon Seller Central → Apps & Services → Manage Your Apps → Authorize a new app (SP-API)</span>
+          </div>
+          <div class="connect-step">
+            <span class="step-num">02</span>
+            <span>In Make, add an HTTP module hitting <code style="font-family:var(--mono);font-size:11px;color:var(--accent2)">https://sellingpartnerapi-na.amazon.com/reports/2021-06-30/reports</code> with your LWA refresh token</span>
+          </div>
+          <div class="connect-step">
+            <span class="step-num">03</span>
+            <span>Request report type <code style="font-family:var(--mono);font-size:11px;color:var(--accent2)">GET_SALES_AND_TRAFFIC_REPORT</code> — upsert into a new <code style="font-family:var(--mono);font-size:11px;color:var(--accent2)">amazon_daily</code> Supabase table</span>
+          </div>
+          <div class="connect-step">
+            <span class="step-num">04</span>
+            <span>For Sponsored Products ACOS, use the Advertising API: <code style="font-family:var(--mono);font-size:11px;color:var(--accent2)">advertising.amazon.com/API/v2/reports</code></span>
+          </div>
+          <div class="connect-step">
+            <span class="step-num">05</span>
+            <span>Once the table is populated, this page will show BSR, units sold, ACOS, TACoS, and ad spend automatically</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-row even" style="margin-top:12px;opacity:0.4;pointer-events:none">
+        <div class="chart-card">
+          <div class="card-header"><div class="card-title">Units Sold — preview</div></div>
+          <div style="position:relative;height:160px">
+            <canvas id="amzUnitsChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="card-header"><div class="card-title">ACOS — preview</div></div>
+          <div style="position:relative;height:160px">
+            <canvas id="amzAcosChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://fjartygreecuxebjgpbs.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqYXJ0eWdyZWVjdXhlYmpncGJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxMjI1MzYsImV4cCI6MjA5MTY5ODUzNn0.5CRuG63qB_h6nbtB8FMsxcw6W4JOCP1Z4Zo76ko3bIE';
+const hdrs = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+
+let currentDays = 30;
+let cachedData = {};
+let charts = {};
+let currentPage = 'overview';
+let autoRefreshTimer;
+
+// ── Supabase helpers ──────────────────────────────────────────────────
+async function query(table, params = '') {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers: hdrs });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function upsert(table, rows) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: { ...hdrs, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify(rows)
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+// ── Formatters ────────────────────────────────────────────────────────
+function dateFrom(days) {
+  const d = new Date(); d.setDate(d.getDate() - days + 1);
+  return d.toISOString().split('T')[0];
+}
+function datePrev(days) {
+  // start of the previous equivalent period
+  const d = new Date(); d.setDate(d.getDate() - days * 2 + 1);
+  return d.toISOString().split('T')[0];
+}
+const fmt   = n => '$' + Math.round(n).toLocaleString();
+const fmtK  = n => n >= 1000 ? '$' + (n/1000).toFixed(1) + 'K' : fmt(n);
+const x2    = n => parseFloat(n).toFixed(2) + 'x';
+const pct   = n => (n * 100).toFixed(1) + '%';
+const fmtN  = n => Math.round(n).toLocaleString();
+const fmtC  = n => '$' + parseFloat(n).toFixed(2);
+const dateLabel = d => { const dt = new Date(d); return (dt.getMonth()+1)+'/'+dt.getDate(); };
+
+function delta(curr, prev) {
+  if (!prev || prev === 0) return { pct: null, dir: 'neutral' };
+  const p = (curr - prev) / Math.abs(prev);
+  return { pct: p, dir: p > 0.005 ? 'up' : p < -0.005 ? 'down' : 'neutral' };
+}
+function deltaHtml(d, invertGood = false) {
+  if (d.pct === null) return `<span class="kpi-delta neutral">No prior period</span>`;
+  const isGood = invertGood ? d.dir === 'down' : d.dir === 'up';
+  const arrow = d.dir === 'up' ? '↑' : d.dir === 'down' ? '↓' : '~';
+  const cls = isGood ? 'up' : d.dir === 'neutral' ? 'neutral' : 'down';
+  return `<div class="kpi-delta ${cls}">${arrow} ${Math.abs(d.pct * 100).toFixed(1)}% vs prior period</div>`;
+}
+
+// ── Chart factory ─────────────────────────────────────────────────────
+const chartDefaults = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+};
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+// ── Navigation ────────────────────────────────────────────────────────
+function showPage(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  el.classList.add('active');
+  currentPage = page;
+  if (cachedData.shopify) renderPage(page);
+}
+
+// ── Data load ─────────────────────────────────────────────────────────
+async function loadData() {
+  const since = dateFrom(currentDays);
+  const prevSince = datePrev(currentDays);
+
+  const [shopify, adMetrics, adSpendCSV, shopifyPrev, adMetricsPrev] = await Promise.all([
+    query('shopify_daily', `date=gte.${since}&order=date.asc`),
+    query('ad_metrics', `date=gte.${since}&order=date.asc`).catch(() => []),
+    query('ad_spend_daily', `date=gte.${since}&order=date.asc`).catch(() => []),
+    query('shopify_daily', `date=gte.${prevSince}&date=lt.${since}&order=date.asc`).catch(() => []),
+    query('ad_metrics', `date=gte.${prevSince}&date=lt.${since}&order=date.asc`).catch(() => []),
+  ]);
+
+  // Update channel status indicators
+  const apiPlatforms = new Set(adMetrics.map(r => r.platform));
+  const csvChannels  = new Set(adSpendCSV.map(r => r.channel));
+  ['meta','google','bing'].forEach(p => {
+    const dot = document.getElementById(p + '-dot');
+    const status = document.getElementById(p + '-status');
+    if (!dot) return;
+    if (apiPlatforms.has(p)) {
+      const latest = adMetrics.filter(r => r.platform === p).sort((a,b) => b.date.localeCompare(a.date))[0];
+      dot.style.background = 'var(--green)';
+      status.innerHTML = `<span style="color:var(--green)">● Live API</span> — ${latest?.date || ''}`;
+    } else if (csvChannels.has(p)) {
+      dot.style.background = 'var(--accent3)';
+      status.textContent = 'CSV — ' + adSpendCSV.filter(r => r.channel === p).length + ' days';
+    } else {
+      dot.style.background = 'var(--muted)';
+      status.textContent = 'No data';
+    }
+  });
+
+  // Merge ad sources: API > CSV per date+channel
+  const apiAsSpend = adMetrics.map(r => ({
+    date: r.date, channel: r.platform,
+    spend: r.spend || 0, impressions: r.impressions || 0, clicks: r.clicks || 0,
+    cpc: r.cpc || 0, cpm: r.cpm || 0, roas: r.roas || 0,
+    conversions: r.conversions || 0, conversion_value: r.conversion_value || 0,
+    revenue_attr: r.conversion_value || (r.roas && r.spend ? r.roas * r.spend : 0),
+    _source: 'api'
+  }));
+  const apiKeys = new Set(apiAsSpend.map(r => r.date + '|' + r.channel));
+  const csvFill = adSpendCSV
+    .map(r => ({ ...r, cpc: r.cpc || 0, cpm: r.cpm || 0, roas: r.roas || 0, clicks: r.clicks || 0, impressions: r.impressions || 0, conversions: 0, conversion_value: 0, _source: 'csv' }))
+    .filter(r => !apiKeys.has(r.date + '|' + r.channel));
+  const adSpend = [...apiAsSpend, ...csvFill].sort((a,b) => a.date.localeCompare(b.date));
+
+  // Same for prev period
+  const prevApiAsSpend = adMetricsPrev.map(r => ({
+    date: r.date, channel: r.platform,
+    spend: r.spend || 0, revenue_attr: r.conversion_value || (r.roas && r.spend ? r.roas * r.spend : 0)
+  }));
+
+  const apiCount = adMetrics.length;
+  document.getElementById('last-sync').textContent = apiCount > 0
+    ? `API: ${apiCount} rows · ${new Date().toLocaleTimeString()}`
+    : `CSV only · ${new Date().toLocaleTimeString()}`;
+  document.getElementById('sync-label').textContent = 'Synced ' + new Date().toLocaleTimeString();
+  document.getElementById('shopify-status').textContent = shopify.length + ' days loaded';
+  document.getElementById('shopify-dot').style.background = shopify.length ? 'var(--green)' : 'var(--muted)';
+
+  cachedData = { shopify, adSpend, shopifyPrev, adSpendPrev: prevApiAsSpend };
+  renderPage(currentPage);
+}
+
+function renderPage(page) {
+  const { shopify, adSpend, shopifyPrev, adSpendPrev } = cachedData;
+  if (page === 'overview')  renderOverview(shopify, adSpend, shopifyPrev, adSpendPrev);
+  if (page === 'marketing') renderMarketing(adSpend);
+  if (page === 'orders')    renderOrders(shopify, shopifyPrev);
+  if (page === 'amazon')    renderAmazonPreview();
+}
+
+// ── OVERVIEW ─────────────────────────────────────────────────────────
+function renderOverview(shopify, adSpend, shopifyPrev, adSpendPrev) {
+  renderKPIs(shopify, adSpend, shopifyPrev, adSpendPrev);
+  renderRevenueChart(shopify);
+  renderSpendChart(adSpend);
+  renderMerChart(shopify, adSpend);
+  renderChannelTable(adSpend);
+}
+
+function renderKPIs(shopify, adSpend, shopifyPrev, adSpendPrev) {
+  if (!shopify.length) {
+    document.getElementById('kpi-revenue').innerHTML = '<div class="loading">No Shopify data yet — run the SQL schema and populate shopify_daily</div>';
+    return;
+  }
+  const totalRev    = shopify.reduce((s,r) => s + +r.revenue, 0);
+  const totalOrders = shopify.reduce((s,r) => s + +r.orders, 0);
+  const totalRefunds= shopify.reduce((s,r) => s + +r.refunds, 0);
+  const totalSpend  = adSpend.reduce((s,r) => s + +r.spend, 0);
+  const totalAttr   = adSpend.reduce((s,r) => s + +r.revenue_attr, 0);
+  const aov         = totalOrders > 0 ? totalRev / totalOrders : 0;
+  const mer         = totalSpend > 0 ? totalRev / totalSpend : 0;
+  const roas        = totalSpend > 0 ? totalAttr / totalSpend : 0;
+  const refundRate  = totalRev > 0 ? totalRefunds / totalRev : 0;
+
+  // Prev period
+  const prevRev   = shopifyPrev.reduce((s,r) => s + +r.revenue, 0);
+  const prevSpend = adSpendPrev.reduce((s,r) => s + +r.spend, 0);
+  const prevAttr  = adSpendPrev.reduce((s,r) => s + +r.revenue_attr, 0);
+  const prevOrders= shopifyPrev.reduce((s,r) => s + +r.orders, 0);
+  const prevMer   = prevSpend > 0 ? prevRev / prevSpend : 0;
+  const prevRoas  = prevSpend > 0 ? prevAttr / prevSpend : 0;
+
+  document.getElementById('kpi-revenue').innerHTML = `
+    <div class="kpi" style="--kpi-color:var(--accent)">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value">${fmtK(totalRev)}</div>
+      ${deltaHtml(delta(totalRev, prevRev))}
+    </div>
+    <div class="kpi" style="--kpi-color:var(--accent2)">
+      <div class="kpi-label">Total Ad Spend</div>
+      <div class="kpi-value">${fmtK(totalSpend)}</div>
+      ${deltaHtml(delta(totalSpend, prevSpend), true)}
+    </div>
+    <div class="kpi" style="--kpi-color:var(--green)">
+      <div class="kpi-label">MER</div>
+      <div class="kpi-value">${x2(mer)}</div>
+      ${deltaHtml(delta(mer, prevMer))}
+    </div>
+    <div class="kpi" style="--kpi-color:var(--accent4)">
+      <div class="kpi-label">Blended ROAS</div>
+      <div class="kpi-value">${x2(roas)}</div>
+      ${deltaHtml(delta(roas, prevRoas))}
+    </div>
+    <div class="kpi" style="--kpi-color:var(--accent3)">
+      <div class="kpi-label">Orders</div>
+      <div class="kpi-value">${fmtN(totalOrders)}</div>
+      ${deltaHtml(delta(totalOrders, prevOrders))}
+    </div>
+    <div class="kpi" style="--kpi-color:var(--red)">
+      <div class="kpi-label">Refund Rate</div>
+      <div class="kpi-value">${pct(refundRate)}</div>
+      <div class="kpi-delta ${refundRate < 0.03 ? 'up' : 'down'}">${fmt(totalRefunds)} total</div>
+    </div>
+  `;
+}
+
+function renderRevenueChart(shopify) {
+  destroyChart('revenue');
+  if (!shopify.length) return;
+  charts['revenue'] = new Chart(document.getElementById('revenueChart'), {
+    type: 'bar',
+    data: {
+      labels: shopify.map(r => dateLabel(r.date)),
+      datasets: [
+        { label: 'Revenue', data: shopify.map(r => +r.revenue), backgroundColor: 'rgba(200,241,53,0.7)', stack: 's' },
+        { label: 'Refunds', data: shopify.map(r => +r.refunds), backgroundColor: 'rgba(248,113,113,0.5)', stack: 's' }
+      ]
+    },
+    options: { ...chartDefaults, scales: {
+      x: { stacked: true, grid: { display: false }, ticks: { color: '#555', font: { size: 10 }, maxTicksLimit: 8 } },
+      y: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#555', font: { size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'K' } }
+    }}
+  });
+}
+
+function renderSpendChart(adSpend) {
+  destroyChart('spend');
+  const channels = ['meta','google','bing'];
+  const colors = { meta: '#fb923c', google: '#7dd3fc', bing: '#a78bfa' };
+  const totals = {};
+  channels.forEach(c => { totals[c] = adSpend.filter(r => r.channel === c).reduce((s,r) => s + +r.spend, 0); });
+  const vals = channels.map(c => Math.round(totals[c]));
+  const total = vals.reduce((a,b) => a+b, 0);
+  if (!total) return;
+  charts['spend'] = new Chart(document.getElementById('spendChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Meta','Google','Bing'],
+      datasets: [{ data: vals, backgroundColor: channels.map(c => colors[c]), borderWidth: 0, hoverOffset: 4 }]
+    },
+    options: { ...chartDefaults, cutout: '68%' }
+  });
+  document.getElementById('spend-legend').innerHTML = channels.map((c,i) =>
+    `<div class="leg"><div class="leg-sq" style="background:${colors[c]}"></div>${c.charAt(0).toUpperCase()+c.slice(1)} ${total > 0 ? Math.round(vals[i]/total*100) : 0}%</div>`
+  ).join('');
+}
+
+function renderMerChart(shopify, adSpend) {
+  destroyChart('mer');
+  const byDate = {};
+  shopify.forEach(r => { byDate[r.date] = { rev: +r.revenue, spend: 0, attr: 0 }; });
+  adSpend.forEach(r => {
+    if (!byDate[r.date]) byDate[r.date] = { rev: 0, spend: 0, attr: 0 };
+    byDate[r.date].spend += +r.spend;
+    byDate[r.date].attr  += +r.revenue_attr;
+  });
+  const dates   = Object.keys(byDate).sort();
+  const labels  = dates.map(dateLabel);
+  const merData = dates.map(d => byDate[d].spend > 0 ? +(byDate[d].rev / byDate[d].spend).toFixed(2) : null);
+  const roasData= dates.map(d => byDate[d].spend > 0 ? +(byDate[d].attr / byDate[d].spend).toFixed(2) : null);
+  charts['mer'] = new Chart(document.getElementById('merChart'), {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'MER',  data: merData,  borderColor: '#7dd3fc', backgroundColor: 'rgba(125,211,252,0.08)', fill: true, tension: 0.4, pointRadius: 0, borderWidth: 1.5 },
+      { label: 'ROAS', data: roasData, borderColor: '#a78bfa', backgroundColor: 'transparent', tension: 0.4, pointRadius: 0, borderWidth: 1.5, borderDash: [4,3] }
+    ]},
+    options: { ...chartDefaults, scales: {
+      x: { grid: { display: false }, ticks: { color: '#555', font: { size: 10 }, maxTicksLimit: 8 } },
+      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#555', font: { size: 10 }, callback: v => v + 'x' }, min: 0 }
+    }}
+  });
+}
+
+function renderChannelTable(adSpend) {
+  const channels = ['meta','google','bing'];
+  const colors = { meta: '#fb923c', google: '#7dd3fc', bing: '#a78bfa' };
+  const totals = {};
+  channels.forEach(c => {
+    const rows = adSpend.filter(r => r.channel === c);
+    const hasApi = rows.some(r => r._source === 'api');
+    totals[c] = {
+      spend:  rows.reduce((s,r) => s + +r.spend, 0),
+      attr:   rows.reduce((s,r) => s + +r.revenue_attr, 0),
+      clicks: rows.reduce((s,r) => s + (+r.clicks || 0), 0),
+      source: hasApi ? 'api' : rows.length ? 'csv' : 'none'
+    };
+    totals[c].roas = totals[c].spend > 0 ? totals[c].attr / totals[c].spend : 0;
+  });
+  document.getElementById('channel-tbody').innerHTML = channels.map(c => {
+    const d = totals[c];
+    const roasCls = d.roas >= 3 ? 'pill-g' : d.roas >= 2 ? 'pill-y' : 'pill-r';
+    const srcBadge = d.source === 'api' ? `<span class="pill pill-g">Live</span>`
+      : d.source === 'csv' ? `<span class="pill pill-y">CSV</span>`
+      : `<span class="pill" style="background:rgba(255,255,255,0.05);color:var(--muted)">—</span>`;
+    return `<tr>
+      <td><div class="ch-name"><div class="ch-dot" style="background:${colors[c]}"></div>${c.charAt(0).toUpperCase()+c.slice(1)}</div></td>
+      <td>${d.spend > 0 ? fmtK(d.spend) : '—'}</td>
+      <td>${d.spend > 0 ? `<span class="pill ${roasCls}">${x2(d.roas)}</span>` : '—'}</td>
+      <td>${d.clicks > 0 ? fmtN(d.clicks) : '—'}</td>
+      <td>${srcBadge}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── MARKETING PAGE ────────────────────────────────────────────────────
+function renderMarketing(adSpend) {
+  const channels = ['meta','google','bing'];
+  const colors = { meta: '#fb923c', google: '#7dd3fc', bing: '#a78bfa' };
+
+  // KPIs
+  const totalSpend  = adSpend.reduce((s,r) => s + +r.spend, 0);
+  const totalClicks = adSpend.reduce((s,r) => s + (+r.clicks || 0), 0);
+  const totalImpr   = adSpend.reduce((s,r) => s + (+r.impressions || 0), 0);
+  const totalConv   = adSpend.reduce((s,r) => s + (+r.conversions || 0), 0);
+  const totalConvVal= adSpend.reduce((s,r) => s + (+r.conversion_value || +r.revenue_attr || 0), 0);
+  const blendedCpc  = totalClicks > 0 ? totalSpend / totalClicks : 0;
+  const blendedRoas = totalSpend > 0 ? totalConvVal / totalSpend : 0;
+  const ctr         = totalImpr > 0 ? totalClicks / totalImpr : 0;
+
+  document.getElementById('mkt-kpis').innerHTML = `
+    <div class="kpi" style="--kpi-color:var(--accent2)">
+      <div class="kpi-label">Total Spend</div>
+      <div class="kpi-value">${fmtK(totalSpend)}</div>
+      <div class="kpi-delta neutral">All channels</div>
+    </div>
+    <div class="kpi" style="--kpi-color:var(--accent)">
+      <div class="kpi-label">Total Clicks</div>
+      <div class="kpi-value">${fmtN(totalClicks)}</div>
+      <div class="kpi-delta neutral">CTR ${pct(ctr)}</div>
+    </div>
+    <div class="kpi" style="--kpi-color:var(--muted)">
+      <div class="kpi-label">Impressions</div>
+      <div class="kpi-value">${totalImpr >= 1000000 ? (totalImpr/1000000).toFixed(1)+'M' : totalImpr >= 1000 ? (totalImpr/1000).toFixed(0)+'K' : fmtN(totalImpr)}</div>
+      <div class="kpi-delta neutral">Blended CPM ${fmtC(totalImpr > 0 ? totalSpend/totalImpr*1000 : 0)}</div>
+    </div>
+    <div class="kpi" style="--kpi-color:var(--accent4)">
+      <div class="kpi-label">Blended ROAS</div>
+      <div class="kpi-value">${x2(blendedRoas)}</div>
+      <div class="kpi-delta ${blendedRoas >= 3 ? 'up' : blendedRoas >= 2 ? 'neutral' : 'down'}">${blendedRoas >= 3 ? '↑ Strong' : blendedRoas >= 2 ? '~ OK' : '↓ Watch'}</div>
+    </div>
+    <div class="kpi" style="--kpi-color:var(--green)">
+      <div class="kpi-label">Conversions</div>
+      <div class="kpi-value">${fmtN(totalConv)}</div>
+      <div class="kpi-delta neutral">Value ${fmtK(totalConvVal)}</div>
+    </div>
+    <div class="kpi" style="--kpi-color:var(--accent3)">
+      <div class="kpi-label">Blended CPC</div>
+      <div class="kpi-value">${fmtC(blendedCpc)}</div>
+      <div class="kpi-delta neutral">${fmtN(totalClicks)} clicks</div>
+    </div>
+  `;
+
+  // Daily spend stacked by channel
+  const dates = [...new Set(adSpend.map(r => r.date))].sort();
+  const labels = dates.map(dateLabel);
+
+  destroyChart('mktSpend');
+  charts['mktSpend'] = new Chart(document.getElementById('mktSpendChart'), {
+    type: 'bar',
+    data: { labels, datasets: channels.map(c => ({
+      label: c, stack: 's',
+      data: dates.map(d => adSpend.filter(r => r.channel===c && r.date===d).reduce((s,r) => s+ +r.spend, 0)),
+      backgroundColor: colors[c] + 'cc'
+    }))},
+    options: { ...chartDefaults, scales: {
+      x: { stacked: true, grid: { display:false }, ticks: { color:'#555', font:{size:10}, maxTicksLimit:8 } },
+      y: { stacked: true, grid: { color:'rgba(255,255,255,0.04)' }, ticks: { color:'#555', font:{size:10}, callback: v => '$'+(v/1000).toFixed(0)+'K' } }
+    }}
+  });
+
+  // ROAS by channel line
+  destroyChart('mktRoas');
+  charts['mktRoas'] = new Chart(document.getElementById('mktRoasChart'), {
+    type: 'line',
+    data: { labels, datasets: channels.map(c => ({
+      label: c, borderColor: colors[c], backgroundColor: 'transparent',
+      tension: 0.4, pointRadius: 0, borderWidth: 1.5,
+      data: dates.map(d => {
+        const rows = adSpend.filter(r => r.channel===c && r.date===d);
+        const sp = rows.reduce((s,r) => s + +r.spend, 0);
+        const at = rows.reduce((s,r) => s + (+r.revenue_attr || 0), 0);
+        return sp > 0 ? +(at/sp).toFixed(2) : null;
+      })
+    }))},
+    options: { ...chartDefaults, scales: {
+      x: { grid:{display:false}, ticks:{color:'#555',font:{size:10},maxTicksLimit:8} },
+      y: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10},callback:v=>v+'x'}, min:0 }
+    }}
+  });
+
+  // CPC trend
+  destroyChart('mktCpc');
+  charts['mktCpc'] = new Chart(document.getElementById('mktCpcChart'), {
+    type: 'line',
+    data: { labels, datasets: channels.map(c => ({
+      label: c, borderColor: colors[c], backgroundColor: 'transparent',
+      tension: 0.4, pointRadius: 0, borderWidth: 1.5,
+      data: dates.map(d => {
+        const rows = adSpend.filter(r => r.channel===c && r.date===d);
+        const cpc = rows.reduce((s,r) => s + (+r.cpc||0), 0);
+        return rows.length ? +(cpc/rows.length).toFixed(3) : null;
+      })
+    }))},
+    options: { ...chartDefaults, scales: {
+      x: { grid:{display:false}, ticks:{color:'#555',font:{size:10},maxTicksLimit:8} },
+      y: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10},callback:v=>'$'+v.toFixed(2)}, min:0 }
+    }}
+  });
+
+  // Clicks + impressions
+  destroyChart('mktClicks');
+  charts['mktClicks'] = new Chart(document.getElementById('mktClicksChart'), {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label:'Clicks', data: dates.map(d => adSpend.filter(r=>r.date===d).reduce((s,r)=>s+(+r.clicks||0),0)), backgroundColor:'rgba(200,241,53,0.7)', yAxisID:'y' },
+      { label:'Impr ÷ 100', type:'line', data: dates.map(d => adSpend.filter(r=>r.date===d).reduce((s,r)=>s+(+r.impressions||0),0)/100), borderColor:'rgba(200,241,53,0.3)', backgroundColor:'transparent', tension:0.4, pointRadius:0, borderWidth:1.5, yAxisID:'y2' }
+    ]},
+    options: { ...chartDefaults, scales: {
+      x: { grid:{display:false}, ticks:{color:'#555',font:{size:10},maxTicksLimit:8} },
+      y:  { position:'left',  grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10}} },
+      y2: { position:'right', grid:{display:false}, ticks:{color:'#444',font:{size:10}} }
+    }}
+  });
+
+  // Detail table
+  document.getElementById('mkt-detail-tbody').innerHTML = channels.map(c => {
+    const rows = adSpend.filter(r => r.channel === c);
+    if (!rows.length) return `<tr><td><div class="ch-name"><div class="ch-dot" style="background:${colors[c]}"></div>${c.charAt(0).toUpperCase()+c.slice(1)}</div></td><td colspan="8" style="color:var(--muted)">No data — upload CSV or connect API</td></tr>`;
+    const sp  = rows.reduce((s,r) => s + +r.spend, 0);
+    const cl  = rows.reduce((s,r) => s + (+r.clicks||0), 0);
+    const im  = rows.reduce((s,r) => s + (+r.impressions||0), 0);
+    const cv  = rows.reduce((s,r) => s + (+r.conversions||0), 0);
+    const cvv = rows.reduce((s,r) => s + (+r.conversion_value|| +r.revenue_attr||0), 0);
+    const cpc = cl > 0 ? sp/cl : 0;
+    const cpm = im > 0 ? sp/im*1000 : 0;
+    const roas= sp > 0 ? cvv/sp : 0;
+    const roasCls = roas >= 3 ? 'pill-g' : roas >= 2 ? 'pill-y' : 'pill-r';
+    return `<tr>
+      <td><div class="ch-name"><div class="ch-dot" style="background:${colors[c]}"></div>${c.charAt(0).toUpperCase()+c.slice(1)}</div></td>
+      <td>${fmtK(sp)}</td><td>${fmtN(cl)}</td><td>${im >= 1000 ? (im/1000).toFixed(0)+'K' : fmtN(im)}</td>
+      <td>${fmtC(cpc)}</td><td>${fmtC(cpm)}</td>
+      <td><span class="pill ${roasCls}">${x2(roas)}</span></td>
+      <td>${fmtN(cv)}</td><td>${fmtK(cvv)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── ORDERS PAGE ───────────────────────────────────────────────────────
+function renderOrders(shopify, shopifyPrev) {
+  if (!shopify.length) {
+    document.getElementById('ord-kpis').innerHTML = '<div class="loading">No Shopify data — populate shopify_daily table</div>';
+    return;
+  }
+  const totalRev    = shopify.reduce((s,r) => s + +r.revenue, 0);
+  const totalOrders = shopify.reduce((s,r) => s + +r.orders, 0);
+  const totalRefunds= shopify.reduce((s,r) => s + +r.refunds, 0);
+  const aov         = totalOrders > 0 ? totalRev / totalOrders : 0;
+  const refundRate  = totalRev > 0 ? totalRefunds / totalRev : 0;
+  const prevRev     = shopifyPrev.reduce((s,r) => s + +r.revenue, 0);
+  const prevOrders  = shopifyPrev.reduce((s,r) => s + +r.orders, 0);
+  const prevAov     = prevOrders > 0 ? prevRev / prevOrders : 0;
+
+  document.getElementById('ord-kpis').innerHTML = `
+    <div class="kpi" style="--kpi-color:var(--accent)">
+      <div class="kpi-label">Revenue</div>
+      <div class="kpi-value">${fmtK(totalRev)}</div>
+      ${deltaHtml(delta(totalRev, prevRev))}
+    </div>
+    <div class="kpi" style="--kpi-color:var(--accent3)">
+      <div class="kpi-label">Orders</div>
+      <div class="kpi-value">${fmtN(totalOrders)}</div>
+      ${deltaHtml(delta(totalOrders, prevOrders))}
+    </div>
+    <div class="kpi" style="--kpi-color:var(--accent2)">
+      <div class="kpi-label">AOV</div>
+      <div class="kpi-value">${fmt(aov)}</div>
+      ${deltaHtml(delta(aov, prevAov))}
+    </div>
+    <div class="kpi" style="--kpi-color:var(--accent4)">
+      <div class="kpi-label">Avg daily orders</div>
+      <div class="kpi-value">${(totalOrders / shopify.length).toFixed(1)}</div>
+      <div class="kpi-delta neutral">over ${shopify.length} days</div>
+    </div>
+    <div class="kpi" style="--kpi-color:var(--red)">
+      <div class="kpi-label">Refunds</div>
+      <div class="kpi-value">${fmtK(totalRefunds)}</div>
+      <div class="kpi-delta ${refundRate < 0.03 ? 'up' : 'down'}">${pct(refundRate)} rate</div>
+    </div>
+  `;
+
+  const labels = shopify.map(r => dateLabel(r.date));
+
+  destroyChart('ordOrders');
+  charts['ordOrders'] = new Chart(document.getElementById('ordOrdersChart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data: shopify.map(r => +r.orders), backgroundColor: 'rgba(251,146,60,0.7)' }] },
+    options: { ...chartDefaults, scales: {
+      x: { grid:{display:false}, ticks:{color:'#555',font:{size:10},maxTicksLimit:8} },
+      y: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10}} }
+    }}
+  });
+
+  destroyChart('ordAov');
+  charts['ordAov'] = new Chart(document.getElementById('ordAovChart'), {
+    type: 'line',
+    data: { labels, datasets: [{ data: shopify.map(r => +r.orders > 0 ? +(+r.revenue / +r.orders).toFixed(2) : null), borderColor:'#a78bfa', backgroundColor:'rgba(167,139,250,0.08)', fill:true, tension:0.4, pointRadius:0, borderWidth:1.5 }] },
+    options: { ...chartDefaults, scales: {
+      x: { grid:{display:false}, ticks:{color:'#555',font:{size:10},maxTicksLimit:8} },
+      y: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10},callback:v=>'$'+v.toFixed(0)}, min:0 }
+    }}
+  });
+
+  destroyChart('ordRev');
+  charts['ordRev'] = new Chart(document.getElementById('ordRevChart'), {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label:'Revenue', data:shopify.map(r=>+r.revenue), backgroundColor:'rgba(200,241,53,0.7)', stack:'s' },
+      { label:'Refunds', data:shopify.map(r=>+r.refunds), backgroundColor:'rgba(248,113,113,0.5)', stack:'s' }
+    ]},
+    options: { ...chartDefaults, scales: {
+      x: { stacked:true, grid:{display:false}, ticks:{color:'#555',font:{size:10},maxTicksLimit:8} },
+      y: { stacked:true, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10},callback:v=>'$'+(v/1000).toFixed(0)+'K'} }
+    }}
+  });
+
+  destroyChart('ordRefundRate');
+  charts['ordRefundRate'] = new Chart(document.getElementById('ordRefundRateChart'), {
+    type: 'line',
+    data: { labels, datasets: [{ data: shopify.map(r => +r.revenue > 0 ? +((+r.refunds / +r.revenue)*100).toFixed(2) : 0), borderColor:'#f87171', backgroundColor:'rgba(248,113,113,0.08)', fill:true, tension:0.4, pointRadius:0, borderWidth:1.5 }] },
+    options: { ...chartDefaults, scales: {
+      x: { grid:{display:false}, ticks:{color:'#555',font:{size:10},maxTicksLimit:8} },
+      y: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10},callback:v=>v+'%'}, min:0 }
+    }}
+  });
+}
+
+// ── AMAZON PREVIEW ────────────────────────────────────────────────────
+function renderAmazonPreview() {
+  // Ghost charts to show shape of what's coming
+  const ghostLabels = ['Apr 1','Apr 2','Apr 3','Apr 4','Apr 5','Apr 6','Apr 7'];
+  const ghostData1  = [120,145,138,160,152,178,165];
+  const ghostData2  = [18,22,19,24,21,26,23];
+
+  destroyChart('amzUnits');
+  charts['amzUnits'] = new Chart(document.getElementById('amzUnitsChart'), {
+    type: 'bar',
+    data: { labels: ghostLabels, datasets: [{ data: ghostData1, backgroundColor:'rgba(200,241,53,0.3)' }] },
+    options: { ...chartDefaults, scales: {
+      x: { grid:{display:false}, ticks:{color:'#555',font:{size:10}} },
+      y: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10}} }
+    }}
+  });
+
+  destroyChart('amzAcos');
+  charts['amzAcos'] = new Chart(document.getElementById('amzAcosChart'), {
+    type: 'line',
+    data: { labels: ghostLabels, datasets: [{ data: ghostData2, borderColor:'rgba(251,146,60,0.4)', backgroundColor:'rgba(251,146,60,0.05)', fill:true, tension:0.4, pointRadius:0, borderWidth:1.5 }] },
+    options: { ...chartDefaults, scales: {
+      x: { grid:{display:false}, ticks:{color:'#555',font:{size:10}} },
+      y: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10},callback:v=>v+'%'}, min:0 }
+    }}
+  });
+}
+
+// ── Range selector ────────────────────────────────────────────────────
+function setRange(days, btn) {
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentDays = days;
+  loadData().catch(e => showToast('Load error: ' + e.message, 'error'));
+}
+
+// ── CSV upload ────────────────────────────────────────────────────────
+function triggerUpload(channel) { document.getElementById(channel + '-file').click(); }
+
+async function handleCSV(channel, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const text = await file.text();
+  const lines = text.trim().split('\n');
+  const headerLine = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/"/g,''));
+  showToast('Parsing ' + file.name + '...', 'neutral');
+  const col = (name, alts=[]) => headerLine.findIndex(h => h.includes(name) || alts.some(a => h.includes(a)));
+  const dateCol  = col('date', ['day','period']);
+  const spendCol = col('spend', ['cost','amount spent']);
+  const impCol   = col('impression', ['reach']);
+  const clkCol   = col('click');
+  const revCol   = col('revenue', ['conversion value','purchase value','conv. value']);
+  const cpcCol   = col('cpc', ['cost per click']);
+  const cpmCol   = col('cpm', ['cost per mille','cost per 1000']);
+  if (dateCol < 0 || spendCol < 0) { showToast('CSV missing date or spend column', 'error'); return; }
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',').map(c => c.trim().replace(/"/g,''));
+    if (!cols[dateCol]) continue;
+    let date;
+    try { date = new Date(cols[dateCol]).toISOString().split('T')[0]; } catch { continue; }
+    rows.push({
+      date, channel,
+      spend:        parseFloat(cols[spendCol]) || 0,
+      impressions:  impCol  >= 0 ? parseInt(cols[impCol])   || 0 : 0,
+      clicks:       clkCol  >= 0 ? parseInt(cols[clkCol])   || 0 : 0,
+      revenue_attr: revCol  >= 0 ? parseFloat(cols[revCol]) || 0 : 0,
+      cpc:          cpcCol  >= 0 ? parseFloat(cols[cpcCol]) || 0 : 0,
+      cpm:          cpmCol  >= 0 ? parseFloat(cols[cpmCol]) || 0 : 0,
+    });
+  }
+  if (!rows.length) { showToast('No valid rows found', 'error'); return; }
+  try {
+    await upsert('ad_spend_daily', rows);
+    document.getElementById(channel + '-status').textContent = rows.length + ' days imported';
+    showToast(channel.charAt(0).toUpperCase()+channel.slice(1) + ': ' + rows.length + ' rows saved', 'success');
+    loadData();
+  } catch(e) { showToast('Upload failed: ' + e.message, 'error'); }
+  input.value = '';
+}
+
+// ── Export ────────────────────────────────────────────────────────────
+function exportData() {
+  const { shopify = [], adSpend = [] } = cachedData;
+  const byDate = {};
+  shopify.forEach(r => {
+    byDate[r.date] = { date: r.date, shopify_revenue: r.revenue, orders: r.orders, aov: (+r.orders > 0 ? +r.revenue / +r.orders : 0).toFixed(2), refunds: r.refunds, meta_spend:0, google_spend:0, bing_spend:0, meta_clicks:0, google_clicks:0, bing_clicks:0, meta_roas:0, google_roas:0, bing_roas:0 };
+  });
+  adSpend.forEach(r => {
+    if (!byDate[r.date]) byDate[r.date] = { date:r.date, shopify_revenue:0, orders:0, aov:0, refunds:0, meta_spend:0, google_spend:0, bing_spend:0, meta_clicks:0, google_clicks:0, bing_clicks:0, meta_roas:0, google_roas:0, bing_roas:0 };
+    byDate[r.date][r.channel+'_spend']  = r.spend;
+    byDate[r.date][r.channel+'_clicks'] = r.clicks || 0;
+    byDate[r.date][r.channel+'_roas']   = r.roas   || 0;
+  });
+  const rows = Object.values(byDate).sort((a,b) => a.date.localeCompare(b.date));
+  const hdrs2 = ['date','shopify_revenue','orders','aov','refunds','meta_spend','meta_clicks','meta_roas','google_spend','google_clicks','google_roas','bing_spend','bing_clicks','bing_roas'];
+  const csv = [hdrs2.join(','), ...rows.map(r => hdrs2.map(h => r[h] ?? 0).join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'adv_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  showToast('Exported ' + rows.length + ' rows', 'success');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = 'neutral') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type === 'success' ? 'success' : type === 'error' ? 'error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ── Auto-refresh every 5 min ──────────────────────────────────────────
+function scheduleRefresh() {
+  clearTimeout(autoRefreshTimer);
+  autoRefreshTimer = setTimeout(() => {
+    loadData().catch(console.error).finally(scheduleRefresh);
+  }, 5 * 60 * 1000);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+loadData()
+  .then(scheduleRefresh)
+  .catch(e => {
+    document.getElementById('kpi-revenue').innerHTML = '<div class="loading" style="color:var(--red)">DB not ready — run SQL schema first</div>';
+    document.getElementById('shopify-status').textContent = 'Schema needed';
+    console.error(e);
+  });
+</script>
+</body>
+</html>
